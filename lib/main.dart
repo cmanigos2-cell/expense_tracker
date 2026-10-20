@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '/expense.dart';
+import 'expense.dart';
 import 'widgets/expense_form.dart';
 import 'widgets/expense_list.dart';
 import 'widgets/total_expenses.dart';
+import 'screen/statistics_screen.dart';
+import 'screen/setting_screen.dart';
+import 'screen/about_screen.dart';
 
 void main() {
   runApp(const ExpenseTrackerApp());
@@ -17,23 +20,18 @@ class ExpenseTrackerApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Expense Tracker',
-
       theme: ThemeData(
         useMaterial3: true,
-
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.teal,
           brightness: Brightness.light,
         ),
-
         appBarTheme: const AppBarTheme(
           centerTitle: true,
         ),
-
         inputDecorationTheme: const InputDecorationTheme(
           border: OutlineInputBorder(),
         ),
-
         cardTheme: const CardThemeData(
           elevation: 3,
           margin: EdgeInsets.symmetric(
@@ -42,7 +40,11 @@ class ExpenseTrackerApp extends StatelessWidget {
           ),
         ),
       ),
-
+      routes: {
+        '/statistics': (context) => const StatisticsScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/about': (context) => const AboutScreen(),
+      },
       home: const ExpenseHomePage(),
     );
   }
@@ -52,9 +54,7 @@ class ExpenseHomePage extends StatefulWidget {
   const ExpenseHomePage({super.key});
 
   @override
-  State<ExpenseHomePage> createState() {
-    return _ExpenseHomePageState();
-  }
+  State<ExpenseHomePage> createState() => _ExpenseHomePageState();
 }
 
 class _ExpenseHomePageState extends State<ExpenseHomePage> {
@@ -77,12 +77,14 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
 
   void _addExpense() {
     final title = _titleController.text.trim();
-
-    final amount = double.tryParse(
-      _amountController.text,
-    );
+    final amount = double.tryParse(_amountController.text);
 
     if (title.isEmpty || amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a valid title and amount.'),
+        ),
+      );
       return;
     }
 
@@ -118,14 +120,26 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Expense Tracker',
-        ),
+        title: const Text('Expense Tracker'),
+        actions: [
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings');
+            },
+          ),
+          IconButton(
+            tooltip: 'Statistics',
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () {
+              Navigator.pushNamed(context, '/statistics');
+            },
+          ),
+        ],
       ),
-
       body: OrientationBuilder(
         builder: (context, orientation) {
-          // LANDSCAPE
           if (orientation == Orientation.landscape) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,19 +149,13 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        TotalExpenses(
-                          total: _totalExpenses,
-                        ),
-
+                        TotalExpenses(total: _totalExpenses),
                         ExpenseForm(
                           titleController: _titleController,
                           amountController: _amountController,
                           selectedCategory: _selectedCategory,
                           onCategoryChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
-
+                            if (value == null) return;
                             setState(() {
                               _selectedCategory = value;
                             });
@@ -158,7 +166,6 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
                     ),
                   ),
                 ),
-
                 Expanded(
                   flex: 3,
                   child: ExpenseList(
@@ -170,33 +177,22 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
             );
           }
 
-          // PORTRAIT
           return Column(
             children: [
-              TotalExpenses(
-                total: _totalExpenses,
-              ),
-
+              TotalExpenses(total: _totalExpenses),
               ExpenseForm(
                 titleController: _titleController,
                 amountController: _amountController,
                 selectedCategory: _selectedCategory,
                 onCategoryChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-
+                  if (value == null) return;
                   setState(() {
                     _selectedCategory = value;
                   });
                 },
                 onAddExpense: _addExpense,
               ),
-
-              const SizedBox(
-                height: 10,
-              ),
-
+              const SizedBox(height: 10),
               Expanded(
                 child: ExpenseList(
                   expenses: _expenses,
